@@ -68,16 +68,16 @@ public class TestScene extends Scene {
 
         br = new BoxRenderer(camera);
 
-        //marchingCubes = new MarchingCubes();
-        //marchingCubes.march();
+        marchingCubes = new MarchingCubes();
+        marchingCubes.march();
 
         //fieldRenderer = new FieldRenderer(camera, marchingCubes.getField());
-        //guiRenderer.getGui().getModel().setTextureID(marchingCubes.getTextureID());
+        guiRenderer.getGui().getModel().setTextureID(marchingCubes.getTextureID());
 
         pr = new PointRenderer(camera);
 
-        noise = new NoiseCompute();
-        guiRenderer.getGui().getModel().setTextureID(noise.getFBMTextureID());
+        //noise = new NoiseCompute();
+        //guiRenderer.getGui().getModel().setTextureID(noise.getFBMTextureID());
     }
 
     @Override
@@ -92,7 +92,7 @@ public class TestScene extends Scene {
         pRend.render();
 
         if(KeyCallback.isV()) vRend.render();
-        //marchingCubes.march();
+        marchingCubes.march();
 
         //fieldRenderer.render();
         //guiRenderer.render();

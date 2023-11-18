@@ -47,7 +47,7 @@ public class MarchingCubes {
 
         //float[] dt = compute.getData(4 * (field.getSizeX() - 1) * (field.getSizeZ() - 1) * 9);
 
-        float[] dt = compute.getData(700*3);
+        float[] dt = compute.getData(4 * (field.getSizeX() - 1) * (field.getSizeZ() - 1) * 9);
         for(int ii = 0; ii < dt.length; ii++)
             System.out.print(dt[ii] + " ");
         System.out.println();

@@ -23,7 +23,7 @@ uniform int t;
 uniform float iso_value;
 
 
-
+/*
 const int edgeTable[256]={
 0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -315,7 +315,7 @@ const int triTable[256][16] =
 {0, 9, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
 {0, 3, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
-
+*/
 
 
 /*
@@ -373,8 +373,7 @@ void main(void) {
     uint zCoord = gl_LocalInvocationID.z;// % (sizeZ - 1);
     uint yCoord = gl_LocalInvocationID.y;
 
-    const uint count = 8;
-    vec4 vert[count] = {
+    vec4 vert[8] = {
             getVertex(xCoord, yCoord, zCoord,   0),
             getVertex(xCoord, yCoord, zCoord,   1),
             getVertex(xCoord, yCoord, zCoord,   2),
@@ -386,7 +385,7 @@ void main(void) {
     };
 
 
-    int cubeindex = 0;
+    /*int cubeindex = 0;
 
     //for(int ii = 0; ii < 8; ii++) {
     //    if(vert[ii].w < iso_value) cubeindex |= (1 << ii);
@@ -434,7 +433,7 @@ void main(void) {
         interpolatedVertices[11] = interpolate(vert[3], vert[7]);
 
 
-    uint index = indexOf(gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
+
     int nTri = 0;
 
     vec3[] cubeTriangles = { vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
@@ -447,28 +446,15 @@ void main(void) {
         cubeTriangles[3 * nTri    ] = interpolatedVertices[triTable[cubeindex][ii   ]];
         cubeTriangles[3 * nTri + 1] = interpolatedVertices[triTable[cubeindex][ii + 1]];
         cubeTriangles[3 * nTri + 2] = interpolatedVertices[triTable[cubeindex][ii + 2]];
-        //bufferOut.data[3*index + 0] = interpolatedVertices[triTable[cubeindex][ii    ]].x;
-        ///bufferOut.data[3*index + 1] = interpolatedVertices[triTable[cubeindex][ii    ]].y;
-        //bufferOut.data[3*index + 2] = interpolatedVertices[triTable[cubeindex][ii    ]].z;
-
-        /*bufferOut.data[45 * index + 9 * nTri + 0] = interpolatedVertices[0].x;
-        bufferOut.data[45 * index + 9 * nTri + 1] = interpolatedVertices[0].y;
-        bufferOut.data[45 * index + 9 * nTri + 2] = interpolatedVertices[0].z;
-
-        bufferOut.data[45 * index + 9 * nTri + 3] = interpolatedVertices[triTable[cubeindex][ii + 1]].x;
-        bufferOut.data[45 * index + 9 * nTri + 4] = interpolatedVertices[triTable[cubeindex][ii + 1]].y;
-        bufferOut.data[45 * index + 9 * nTri + 5] = interpolatedVertices[triTable[cubeindex][ii + 1]].z;
-
-        bufferOut.data[45 * index + 9 * nTri + 6] = interpolatedVertices[triTable[cubeindex][ii + 2]].x;
-        bufferOut.data[45 * index + 9 * nTri + 7] = interpolatedVertices[triTable[cubeindex][ii + 2]].y;
-        bufferOut.data[45 * index + 9 * nTri + 8] = interpolatedVertices[triTable[cubeindex][ii + 2]].z;*/
         nTri++;
-    }// bufferOut.data[0] = nTri;
+    }
+*/
+    uint index = indexOf(xCoord, yCoord, zCoord);
 
-    index = indexOf(xCoord, yCoord, zCoord);
-    bufferOut.data[3*index    ] = vert[0].x;
-    bufferOut.data[3*index + 1] = vert[0].y;
-    bufferOut.data[3*index + 2] = vert[0].z;
+    bufferOut.data[4 * index    ] = vert[0].x;
+    bufferOut.data[4 * index + 1] = vert[0].y;
+    bufferOut.data[4 * index + 2] = vert[0].z;
+    bufferOut.data[4 * index + 3] = vert[0].w;
 
     /*bufferOut.data[3 * index    ] = vert[0].x;
     bufferOut.data[3 * index + 1] = vert[0].y;
@@ -482,7 +468,7 @@ void main(void) {
     bufferOut.data[4 * index + 3] = vert[0].w;*/
 
 
-/*bufferOut.data[3*index] = index;
+    /*bufferOut.data[3*index] = index;
     bufferOut.data[3*index+1] = index;
     bufferOut.data[3*index+2] = index;*/
     //bufferOut.data[0] = indexOf(2, 2, 2);

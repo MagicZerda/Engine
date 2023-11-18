@@ -18,8 +18,8 @@ public class PointRenderer extends Renderer {
 
     public PointRenderer(Camera camera) {
         super(new ShaderProgram(
-                new Shader(ShaderType.VERTEX, "field/pointVertex.glsl"),
-                new Shader(ShaderType.FRAGMENT, "field/pointFragment.glsl")),
+                new Shader(ShaderType.VERTEX, "field/fieldVertex.glsl"),
+                new Shader(ShaderType.FRAGMENT, "field/fieldFragment.glsl")),
                 GL11.GL_POINTS);
 
         setPointSize(30);
@@ -29,7 +29,7 @@ public class PointRenderer extends Renderer {
 
     public static void updateVertices(float[] vertices) {
         PointRenderer.vertices = vertices;
-        Loader.updateModel(PointRenderer.object.getModel(), 3, PointRenderer.vertices);
+        Loader.updateModel(PointRenderer.object.getModel(), 4, PointRenderer.vertices);
     }
 
     public static void addVertices(float[] vertices) {
@@ -50,6 +50,7 @@ public class PointRenderer extends Renderer {
 
 
     public void render() {
+        setPointSize(10);
         super.render(object, false);
     }
 
