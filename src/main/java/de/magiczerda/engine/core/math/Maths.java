@@ -6,6 +6,7 @@ import org.joml.Matrix4f;
 public class Maths {
 
     private static Matrix4f projectionMatrix = null;
+    private static Matrix4f inverseProjection = new Matrix4f();
 
     public static float currentZoomFactor = 1;
 
@@ -26,6 +27,9 @@ public class Maths {
             projectionMatrix.m32(-((2 * Settings.NEAR_PLANE * Settings.FAR_PLANE) / frustum_length));
             projectionMatrix.m33(0);// = 0;
         }
+
+        inverseProjection = projectionMatrix.invert(inverseProjection);
+
     }
 
     public static void changeZoom(double zoomMultiplier) {
@@ -44,5 +48,7 @@ public class Maths {
     }
 
     public static Matrix4f getProjectionMatrix() { return projectionMatrix; }
+
+    public static Matrix4f getInverseProjection() { return inverseProjection; }
 
 }

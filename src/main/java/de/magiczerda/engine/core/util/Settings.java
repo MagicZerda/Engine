@@ -19,7 +19,7 @@ public class Settings {
     public static final String MAIN_PACKAGE_STRUCTURE = "src/main/java/de/magiczerda/engine/";
 
 
-    public static Vector4f clearColor = new Vector4f(0, 0, 1, 0);
+    public static Vector4f clearColor = new Vector4f(0.7f, 0, 1, 0);
     public static boolean VSYNC = false;
     public static int TARGET_FPS = 10;
 

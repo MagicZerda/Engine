@@ -11,9 +11,9 @@ import java.util.List;
 
 public class EField extends ScalarField {
 
-    protected static final int sizeX = 9,
-            sizeY = 29,
-            sizeZ = 9;
+    protected static final int sizeX = 10,
+            sizeY = 10,
+            sizeZ = 10;
 
 
     protected List<Vector3f> charges;
@@ -27,10 +27,9 @@ public class EField extends ScalarField {
     @Override
     protected void init() {
         charges = new ArrayList<>();
-        charges.add(new Vector3f(5, 5, 5));
+        charges.add(new Vector3f(0, 0, 0));
+        charges.add(new Vector3f(6, 6, 6));
         //charges.add(new Vector3f(7, 6, 7));
-        //charges.add(new Vector3f(3, 3, 3));
-        //charges.add(new Vector3f(0, 0, 0));
     }
 
     protected float val = 0;
@@ -48,7 +47,7 @@ public class EField extends ScalarField {
         int chargeCount = charges.size();
         for(int oo = 0; oo < chargeCount; oo++) {
 
-            value += charges.get(oo).distance(xx, yy, zz);
+            value += 10f / charges.get(oo).distanceSquared(xx, yy, zz);
 
             /*for(int dd = oo + 1; dd < chargeCount; dd++) {
                 value += charges.get(oo).distance(charges.get(dd));
@@ -56,7 +55,7 @@ public class EField extends ScalarField {
             }*/
         }
 
-        return value/ 7f;
+        return value;
     }
 
 

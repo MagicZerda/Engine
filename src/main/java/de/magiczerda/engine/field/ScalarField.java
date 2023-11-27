@@ -38,6 +38,22 @@ public abstract class ScalarField {
        this.gameObject = new GameObject(model);
     }
 
+
+    public float[] getFieldData() {
+        float[] fieldData = new float[sizeX * sizeY * sizeY];
+
+
+        for(int yy = 0; yy < sizeY; yy++) {
+            for(int zz = 0; zz < sizeZ; zz++) {
+                for(int xx = 0; xx < sizeX; xx++)
+                    fieldData[yy*sizeX*sizeZ + zz*(sizeZ) + xx] = getValueAt(xx, yy, zz);
+            }
+        }
+
+        return fieldData;
+    }
+
+
     protected void updateValues() {
         for(int yy = 0; yy < sizeY; yy++) {
             for(int zz = 0; zz < sizeZ; zz++) {

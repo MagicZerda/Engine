@@ -10,8 +10,8 @@ import org.joml.Vector3f;
 public class Plane {
 
     protected float dp = 1f;
-    protected int ppz = 500;
-    protected int ppx = 500;
+    protected int ppz = 10;
+    protected int ppx = 10;
 
 
     protected float[] vertices;

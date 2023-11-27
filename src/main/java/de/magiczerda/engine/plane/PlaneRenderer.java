@@ -3,6 +3,7 @@ package de.magiczerda.engine.plane;
 import de.magiczerda.engine.core.gameObjects.GameObject;
 import de.magiczerda.engine.core.rendering.Camera;
 import de.magiczerda.engine.core.rendering.Renderer;
+import de.magiczerda.engine.core.shader.RCShader;
 import de.magiczerda.engine.core.shader.Shader;
 import de.magiczerda.engine.core.shader.ShaderProgram;
 import de.magiczerda.engine.core.shader.ShaderType;

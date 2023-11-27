@@ -1,68 +1,61 @@
 package de.magiczerda.engine.marchingCubes;
 
-import de.magiczerda.engine.core.shader.ComputeShader;
+import de.magiczerda.engine.core.io.MousePicking;
+import de.magiczerda.engine.core.shader.*;
 import de.magiczerda.engine.field.ScalarField;
 
 public class MarchingCubesCompute extends ComputeShader {
+    protected float isolevel = 0.5f;
 
-    float r = 0, g = 0, b = 0;
 
-    public MarchingCubesCompute(int cubesX, int cubesY, int cubesZ) {
-        super(cubesX, cubesY, cubesZ, "marchingCubes/marchingCubesCompute.glsl");
+    protected float[] outData;
+    protected float[] outNormals;
 
-        //sendData(new float[] {1,1,1});
-        start();
+    protected MarchingCubesField marchingCubesField;
 
-        stop();
+    /** 1000 pts per local group */
+    protected static final int SSBO_OUT_SIZE = 9*9*9 * 1000 * 10;//9*9*9;
+
+    public MarchingCubesCompute(MarchingCubesField marchingCubesField) {
+        super(marchingCubesField.segSize, SSBO_OUT_SIZE, "marchingCubes/marchingCubesCompute.glsl");
+
+        this.marchingCubesField = marchingCubesField;
     }
 
-    public void loadUniforms(int sizeX, int sizeY, int sizeZ, float iso_value, boolean shaderRunning) {
-        if(!shaderRunning) start();
-        loadInt("sizeX", sizeX);
-        loadInt("sizeY", sizeY);
-        loadInt("sizeZ", sizeZ);
-        loadFloat("iso_value", iso_value);
 
-        loadInt("t", 0);
-        if(!shaderRunning) stop();
+    public float[] march() {
+        super.start();
+        super.loadFloat("isolevel", isolevel);
+        super.loadVector3f("worldRay", MousePicking.getScreenCenter());
+        super.loadVector3f("segSize", marchingCubesField.getSegSize());
+
+        super.sendData(marchingCubesField.getFieldValues());
+
+        super.deploySSBO(true);
+        //outData    = ssbos[1].getData();
+        //outNormals = ssbos[2].getData();
+
+        //float[] dd = ssbos[3].getData();
+
+        outData = getData(1);
+        outNormals = getData(2);
+        float[] dd = getData(3);
+
+        super.stop();
+
+        return dd;
     }
 
-    protected int phase = 0;
-    public void update(ScalarField field) {
-        /*final float dc = 0.01f;
-
-        if(r <= 0 && g <= 0 && b <= 0) phase = 0;
-        else {
-            if(r >= 1 && g == 0 && b == 0) phase = 1;
-            if(r >= 1 && g >= 1 && b == 0) phase = 2;
-            if(r >= 1 && g >= 1 && b >= 1) phase = 3;
-            if(r <= 0 && g >= 1 && b >= 1) phase = 4;
-            if(r <= 0 && g <= 0 && b >= 1) phase = 5;
-        }
-
-        if(phase == 0) r += dc;
-        if(phase == 1) g += dc;
-        if(phase == 2) b += dc;
-        if(phase == 3) r -= dc;
-        if(phase == 4) g -= dc;
-        if(phase == 5) b -= dc;
-
-        sendData(new float[] {r, g, b});
-
-        ScalarField field;*/
-
-        int index = 0;
-        float[] data = new float[field.getSizeX() * field.getSizeY() * field.getSizeZ()];
-        for(int yy = 0; yy < field.getSizeY(); yy++) {
-            for (int zz = 0; zz < field.getSizeZ(); zz++) {
-                for (int xx = 0; xx < field.getSizeX(); xx++) {
-                    data[index] = field.getValueAt(xx, yy, zz);
-                    index++;
-                }
-            }
-        }
-
-        sendData(data);
+    public float[] getVertices() {
+        return outData;
     }
+
+    public float[] getNormals() {
+        return outNormals;
+    }
+
+
+    public void setIsolevel(float isolevel) { this.isolevel = isolevel; }
+    public float getIsolevel() { return isolevel; }
 
 }

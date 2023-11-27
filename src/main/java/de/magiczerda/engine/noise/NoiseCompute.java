@@ -6,9 +6,9 @@ import org.lwjgl.opengl.GL11;
 
 public class NoiseCompute {
     protected static ComputeShader fbmCompute = new ComputeShader(
-            1024, 1024, 1, "noise/fbmCompute.glsl");
+            1024, 1024, 1, 0, "noise/fbmCompute.glsl");
     protected ComputeShader voronoiCompute = new ComputeShader(
-            128, 128, 1, "noise/voronoiCompute.glsl");
+            128, 128, 1, 0, "noise/voronoiCompute.glsl");
 
 
     protected static int skip = 0;
@@ -20,7 +20,7 @@ public class NoiseCompute {
         else skip = 0;
         fbmCompute.start();
         fbmCompute.loadVector2f("coordinates", coordinates);
-        fbmCompute.deployTexture(true);
+        fbmCompute.deployTexture(0, true);
         fbmCompute.stop();
     }
 

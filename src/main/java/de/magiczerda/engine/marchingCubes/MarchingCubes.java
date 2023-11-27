@@ -1,101 +1,87 @@
 package de.magiczerda.engine.marchingCubes;
 
-import de.magiczerda.engine.core.controls.SpecialKeys;
-import de.magiczerda.engine.core.io.KeyCallback;
-import de.magiczerda.engine.field.PointRenderer;
-import de.magiczerda.engine.field.ScalarField;
-import de.magiczerda.engine.testing.EField;
+import de.magiczerda.engine.core.gameObjects.GameObject;
 
 public class MarchingCubes {
 
-    protected MarchingCubesCompute compute;
-    protected EField field;
+
+    protected MarchingCubesField marchingCubesField;
+    protected MarchingCubesCompute marchingCubesCompute;
+
+    protected float[] vertices = new float[0];
 
 
-    protected float iso_value = 0.5f;
+    protected float tt = 0;
 
-    public MarchingCubes() {
-        field = new EField();
-        compute = new MarchingCubesCompute(
-                1,
-                1,
-                1);
-
-        compute.loadUniforms(field.getSizeX(), field.getSizeY(), field.getSizeZ(), iso_value, false);
-
-
-        /*SpecialKeys.toRunOnJ = new Runnable() {
-            @Override
-            public void run() {
-                int xx = cubeInd % (field.getSizeX() - 1);
-                int yy = cubeInd / ((field.getSizeX() - 1) * (field.getSizeZ() - 1));
-                int zz = (cubeInd / (field.getSizeX() - 1)) % (field.getSizeZ() - 1);
-
-                yy %= field.getSizeY() - 1;
-                cubeInd++;
-
-                addPoint(xx, yy, zz);
-            }
-        };*/
-
+    public MarchingCubes(MarchingCubesField marchingCubesField) {
+        this.marchingCubesCompute = new MarchingCubesCompute(marchingCubesField);
+        this.marchingCubesField = marchingCubesField;
     }
 
+    int ii = 0;
+    public void update() {
+        ii++;
+        if(ii < 10) return;
+        ii = 0;
 
-    int cubeInd = 0;
+        tt += System.currentTimeMillis() / 10000000000f;
 
-    public void march() {
+        marchingCubesCompute.setIsolevel(0.3f * (float) (Math.sin(tt / 10000f)+1)/2f + 0.6f);
+        marchingCubesCompute.march();
 
-        //float[] dt = compute.getData(4 * (field.getSizeX() - 1) * (field.getSizeZ() - 1) * 9);
+        /*for(int ii = 0; ii < d.length/100; ii++)
+            System.out.print(d[ii] + " ");
+        System.out.println();*/
+    }
 
-        float[] dt = compute.getData(4 * (field.getSizeX() - 1) * (field.getSizeZ() - 1) * 9);
-        for(int ii = 0; ii < dt.length; ii++)
-            System.out.print(dt[ii] + " ");
-        System.out.println();
+    public float[] getVertices() {
+        float[] vert = marchingCubesCompute.getVertices();
+        /*float[] vert3D = new float[3 * vert4D.length/3];
 
-        //BoxRenderer.box.setTranslation();
-        if(KeyCallback.isY()) {
-            //field.update(0.01f);
-
-            compute.start();
-            compute.loadInt("t", SpecialKeys.M_COUNT);
-            compute.update(field);
-            compute.deploySSBO(true);
-            compute.stop();
-
-            PointRenderer.updateVertices(dt);//dt);
+        for(int ii = 0; ii < vert4D.length/4; ii++) {
+            vert3D[3*ii  ] = vert4D[4*ii  ];
+            vert3D[3*ii+1] = vert4D[4*ii+1];
+            vert3D[3*ii+2] = vert4D[4*ii+2];
         }
 
+        return vert3D;*/
 
-        /*int xx = cubeInd % (field.getSizeX() - 1);
-        int yy = cubeInd / ((field.getSizeX() - 1) * (field.getSizeZ() - 1));
-        int zz = (cubeInd / (field.getSizeX() - 1)) % (field.getSizeZ() - 1);
+        /*List<Float> redVertices = new ArrayList<>();
+        for(int ii = 0; ii < vert.length/3; ii++) {
+            if(vert[3*ii] == 0 && vert[3*ii+1] == 0 && vert[3*ii+2] == 0) continue;
+            else {
+                redVertices.add(vert[3*ii]);
+                redVertices.add(vert[3*ii + 1]);
+                redVertices.add(vert[3*ii + 2]);
+            }
+        }
 
-        yy %= field.getSizeY() - 1;
-        cubeInd++;
+        float[] ret = new float[redVertices.size()];
+        for(int ii = 0; ii < redVertices.size(); ii++)
+            ret[ii] = redVertices.get(ii);
 
-        addPoint(xx, yy, zz);*/
+        for(int ii = 0; ii < ret.length; ii++)
+            System.out.print(ret[ii] + " ");
+        System.out.println();
 
+        return ret;*/
+        return vert;
+
+        //return mcc.getVertices();
     }
 
-    /*protected void addPoint(int xx, int yy, int zz) {
-        //PointRenderer.addVertices(new float[] {xx, yy, zz, 1});
-
-        BoxRenderer.box.setTranslation(xx, yy, zz);
-        PointRenderer.updateVertices(new float[] {xx, yy, zz, 0,            //0
-                                                xx+1, yy, zz, 0.1f,         //1
-                                                xx+1, yy, zz+1, 0.2f,          //2
-                                                xx, yy, zz+1, 0.3f,                //3
-                                                xx, yy+1, zz, 0.4f,            //4
-                                                xx+1, yy+1, zz, 0.5f,          //5
-                                                xx+1, yy+1, zz+1, 0.6f,           //6
-                                                xx, yy+1, zz+1, 1              //7
-        });
-    }*/
-
-    public int getTextureID() {
-        return compute.getTextureID();
+    public float[] getNormals() {
+        return marchingCubesCompute.getNormals();
     }
 
-    public ScalarField getField() { return field; }
+    //public EField getField() { return field; }
+
+    public int getTextureID() { return marchingCubesCompute.getTextureID(); }
+
+
+    public void updateGameObject(float[] vertices, float[] normals) {
+        marchingCubesCompute.marchingCubesField.updateGameObject(vertices, normals);
+    }
+    public GameObject getGameObject() { return marchingCubesCompute.marchingCubesField.getMarchingCubesGameObject(); }
 
 }

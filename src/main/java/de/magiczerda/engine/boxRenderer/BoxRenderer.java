@@ -1,8 +1,8 @@
 package de.magiczerda.engine.boxRenderer;
 
-import de.magiczerda.engine.core.io.KeyCallback;
 import de.magiczerda.engine.core.rendering.Camera;
 import de.magiczerda.engine.core.rendering.Renderer;
+import de.magiczerda.engine.core.shader.RCShader;
 import de.magiczerda.engine.core.shader.Shader;
 import de.magiczerda.engine.core.shader.ShaderProgram;
 import de.magiczerda.engine.core.shader.ShaderType;
@@ -20,14 +20,15 @@ public class BoxRenderer extends Renderer {
                 new Shader(ShaderType.FRAGMENT, "boxRenderer/boxFragment.glsl")));
 
         setRenderMode(GL11.GL_LINES);
-        setLineWidth(10);
 
         box = new Box();
         this.camera = camera;
     }
 
     public void render() {
+        setLineWidth(10);
         super.render(box, true);
+        setLineWidth(1);
     }
 
     @Override

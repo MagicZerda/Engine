@@ -5,6 +5,7 @@ import de.magiczerda.engine.core.loading.Loader;
 import de.magiczerda.engine.core.math.Maths;
 import de.magiczerda.engine.core.rendering.Camera;
 import de.magiczerda.engine.core.rendering.Renderer;
+import de.magiczerda.engine.core.shader.RCShader;
 import de.magiczerda.engine.core.shader.Shader;
 import de.magiczerda.engine.core.shader.ShaderProgram;
 import de.magiczerda.engine.core.shader.ShaderType;

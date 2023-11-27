@@ -1,13 +1,15 @@
 package de.magiczerda.engine.core.io;
 
+import de.magiczerda.engine.core.util.Settings;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWCursorPosCallbackI;
 
 public class CursorCallback implements GLFWCursorPosCallbackI {
 
     public static Vector2f cursorPosition = new Vector2f();
+
+    public static Vector2f ndcCursorPos = new Vector2f();
     private boolean firstFrameAfterMenu = false;
 
 
@@ -33,8 +35,14 @@ public class CursorCallback implements GLFWCursorPosCallbackI {
             cursorPosition.set(xpos, ypos);
         }
 
-        else if(GameStateMGR.getCurrentGameState() == GameState.MENU)
+        else if(GameStateMGR.getCurrentGameState() == GameState.MENU) {
             firstFrameAfterMenu = true;
+
+            ndcCursorPos.set(xpos / Settings.CURRENT_WIDTH, ypos / Settings.CURRENT_HEIGHT);
+            ndcCursorPos.add(-0.5f, -0.5f);
+            ndcCursorPos.x *= 2;
+            ndcCursorPos.y *= -2;
+        }
     }
 
 }

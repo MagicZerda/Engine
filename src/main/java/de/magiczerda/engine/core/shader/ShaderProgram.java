@@ -20,7 +20,7 @@ public class ShaderProgram {
      */
     protected int programID;
 
-    protected Shader[] shaders;
+    protected RCShader[] shaders;
 
     /**
      * Used to optimize forwarding matrices to the shaders
@@ -38,11 +38,11 @@ public class ShaderProgram {
      *
      * @param shaders The shaders to link
      */
-    public ShaderProgram(Shader... shaders) {
+    public ShaderProgram(RCShader... shaders) {
         this.shaders = shaders;
 
         programID = GL20.glCreateProgram();
-        for(Shader ss : shaders)
+        for(RCShader ss : shaders)
             GL20.glAttachShader(programID, ss.shaderID);
 
         GL20.glLinkProgram(programID);
@@ -53,7 +53,7 @@ public class ShaderProgram {
 
         start();
 
-        for(Shader ss : shaders)
+        for(RCShader ss : shaders)
             GL20.glDeleteShader(ss.shaderID);
     }
 
@@ -208,7 +208,7 @@ public class ShaderProgram {
      */
 
     public void cleanUp() {
-        for(Shader ss : shaders) {
+        for(RCShader ss : shaders) {
             GL20.glDetachShader(programID, ss.shaderID);
             GL20.glDeleteShader(ss.shaderID);
         }

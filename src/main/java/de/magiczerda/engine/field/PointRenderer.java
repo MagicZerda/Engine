@@ -4,6 +4,7 @@ import de.magiczerda.engine.core.gameObjects.GameObject;
 import de.magiczerda.engine.core.loading.Loader;
 import de.magiczerda.engine.core.rendering.Camera;
 import de.magiczerda.engine.core.rendering.Renderer;
+import de.magiczerda.engine.core.shader.RCShader;
 import de.magiczerda.engine.core.shader.Shader;
 import de.magiczerda.engine.core.shader.ShaderProgram;
 import de.magiczerda.engine.core.shader.ShaderType;
@@ -18,8 +19,8 @@ public class PointRenderer extends Renderer {
 
     public PointRenderer(Camera camera) {
         super(new ShaderProgram(
-                new Shader(ShaderType.VERTEX, "field/fieldVertex.glsl"),
-                new Shader(ShaderType.FRAGMENT, "field/fieldFragment.glsl")),
+                new Shader(ShaderType.VERTEX, "field/pointVertex.glsl"),
+                new Shader(ShaderType.FRAGMENT, "field/pointFragment.glsl")),
                 GL11.GL_POINTS);
 
         setPointSize(30);
@@ -29,7 +30,7 @@ public class PointRenderer extends Renderer {
 
     public static void updateVertices(float[] vertices) {
         PointRenderer.vertices = vertices;
-        Loader.updateModel(PointRenderer.object.getModel(), 4, PointRenderer.vertices);
+        Loader.updateModel(PointRenderer.object.getModel(), 3, PointRenderer.vertices);
     }
 
     public static void addVertices(float[] vertices) {

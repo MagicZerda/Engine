@@ -3,6 +3,7 @@ package de.magiczerda.engine.core.main;
 import de.magiczerda.engine.core.controls.SpecialKeys;
 import de.magiczerda.engine.core.io.DisplayManager;
 import de.magiczerda.engine.core.io.GameStateMGR;
+import de.magiczerda.engine.core.io.MousePicking;
 import de.magiczerda.engine.core.scene.Scene;
 import de.magiczerda.engine.core.util.Time;
 import org.lwjgl.glfw.GLFW;
@@ -24,6 +25,9 @@ public class GameLoop {
         while(!GLFW.glfwWindowShouldClose(DisplayManager.getWindow())) {
             //System.out.println(Time.NOW_SEC);
             display.clear();
+
+
+            MousePicking.calc();
 
             currentScene.loop();
             fps++;

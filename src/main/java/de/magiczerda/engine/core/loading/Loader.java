@@ -56,6 +56,47 @@ public class Loader {
 
 
 
+    public static void updateModel(Model model, float[] newVertices, float[] newNormals) {
+        GL30.glBindVertexArray(model.getVaoID());
+
+        int attributeNumber = 0;
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, model.getVBOID(attributeNumber));
+
+        /* Prepare data */
+        FloatBuffer buffer = floatArrToBuffer(newVertices);
+
+        /* Sends our data to the VBO */
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_DYNAMIC_DRAW);
+
+        /* Specify how OpenGL should interpret the given data */
+        GL20.glVertexAttribPointer(attributeNumber, 3, GL11.GL_FLOAT, false, 0, 0);
+
+
+
+        attributeNumber = 2;
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, model.getVBOID(attributeNumber));
+
+        /* Prepare data */
+        buffer = floatArrToBuffer(newNormals);
+
+        /* Sends our data to the VBO */
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_DYNAMIC_DRAW);
+
+        /* Specify how OpenGL should interpret the given data */
+        GL20.glVertexAttribPointer(attributeNumber, 3, GL11.GL_FLOAT, false, 0, 0);
+
+
+        /* Enable new VBO ID in the VAO
+         * This number will later be used
+         * inside the shader (layout (location = x) in ... [NAME]) */
+        //GL20.glEnableVertexAttribArray(attributeNumber);	//(number for layout in shader)
+        GL30.glBindVertexArray(0);
+
+        model.setVertexCount(newVertices.length/3);
+    }
+
+
+
     public static Model loadModel(float[] vertices, int[] indices, boolean static_draw) {
         int vao = createVAO();
 
@@ -80,6 +121,18 @@ public class Loader {
 
 
         return new Model(vao, indices.length, vertexVBO, normalsVBO);
+    }
+
+    public static Model loadModel(float[] vertices, float[] normals, boolean static_draw) {
+        int vao = createVAO();
+
+        int vertexVBO = loadToVAO(0, 3, vertices, static_draw);
+        int normalsVBO = loadToVAO(2, 3, normals, static_draw);
+
+        unbindVAO();
+
+
+        return new Model(vao, vertices.length/3, vertexVBO, -1, normalsVBO);
     }
 
     public static Model loadModel(float[] vertices, int[] indices, float[] textureCoords, boolean static_draw) {

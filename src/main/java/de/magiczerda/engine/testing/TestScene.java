@@ -3,21 +3,19 @@ package de.magiczerda.engine.testing;
 import de.magiczerda.engine.boxRenderer.BoxRenderer;
 import de.magiczerda.engine.core.controls.FirstPerson;
 import de.magiczerda.engine.core.gui.GUIRenderer;
+import de.magiczerda.engine.core.io.CursorCallback;
 import de.magiczerda.engine.core.io.KeyCallback;
+import de.magiczerda.engine.core.io.MousePicking;
 import de.magiczerda.engine.core.rendering.Camera;
-import de.magiczerda.engine.core.math.Maths;
 import de.magiczerda.engine.core.scene.Scene;
 import de.magiczerda.engine.core.shader.ComputeShader;
 import de.magiczerda.engine.field.FieldRenderer;
 import de.magiczerda.engine.field.PointRenderer;
-import de.magiczerda.engine.marchingCubes.MarchingCubes;
+import de.magiczerda.engine.marchingCubes.MarchingCubesRenderer;
 import de.magiczerda.engine.noise.NoiseCompute;
 import de.magiczerda.engine.plane.PlaneRenderer;
 import de.magiczerda.engine.vectorVis.VectorRenderer;
-import org.joml.Vector2f;
-import org.lwjgl.opengl.GL11;
-
-import javax.swing.*;
+import org.joml.Vector3f;
 
 public class TestScene extends Scene {
 
@@ -28,7 +26,7 @@ public class TestScene extends Scene {
     protected FirstPerson fp;
 
 
-    protected PlaneRenderer pRend;
+    protected PlaneRenderer planeRenderer;
 
     protected VectorRenderer vRend;
 
@@ -37,14 +35,18 @@ public class TestScene extends Scene {
 
     protected FieldRenderer fieldRenderer;
 
-    protected BoxRenderer br;
+    protected BoxRenderer boxRenderer;
 
 
-    protected MarchingCubes marchingCubes;
+    //protected MarchingCubes marchingCubes;
+    //protected MC2 mc;
 
-    protected PointRenderer pr;
+    protected MarchingCubesRenderer mcr;
+
+    protected PointRenderer pointRenderer;
 
     protected NoiseCompute noise;
+
 /*
     public TestScene() {
         super(new Camera(), new Triangle());
@@ -59,22 +61,27 @@ public class TestScene extends Scene {
         fp = new FirstPerson(camera);
 
 
-        triangle.setTranslation(0, 3, -10);
+        //triangle.setTranslation(0, 3, -10);
 
-        pRend = new PlaneRenderer(camera);
+        planeRenderer = new PlaneRenderer(camera);
         vRend = new VectorRenderer(camera);
 
         guiRenderer = new GUIRenderer();
 
-        br = new BoxRenderer(camera);
+        boxRenderer = new BoxRenderer(camera);
 
-        marchingCubes = new MarchingCubes();
-        marchingCubes.march();
+        //marchingCubes = new MarchingCubes();
+        //marchingCubes.march();
 
-        //fieldRenderer = new FieldRenderer(camera, marchingCubes.getField());
-        guiRenderer.getGui().getModel().setTextureID(marchingCubes.getTextureID());
+        mcr = new MarchingCubesRenderer(camera);
+        fieldRenderer = new FieldRenderer(camera, mcr.getField());
+        //guiRenderer.getGui().getModel().setTextureID(marchingCubes.getTextureID());
 
-        pr = new PointRenderer(camera);
+        //mc = new MC2();
+        //fieldRenderer = new FieldRenderer(camera, mcr.getField());
+        //guiRenderer.getGui().getModel().setTextureID(mc.getTextureID());
+
+        pointRenderer = new PointRenderer(camera);
 
         //noise = new NoiseCompute();
         //guiRenderer.getGui().getModel().setTextureID(noise.getFBMTextureID());
@@ -89,17 +96,24 @@ public class TestScene extends Scene {
     @Override
     public void render() {
         renderer.render(triangle, true);
-        pRend.render();
+
+        //planeRenderer.render();
 
         if(KeyCallback.isV()) vRend.render();
-        marchingCubes.march();
+        //marchingCubes.march();
 
-        //fieldRenderer.render();
-        //guiRenderer.render();
+        if(KeyCallback.isF())
+            fieldRenderer.render();
         //compShader.deploy(false);
-        br.render();
+        //boxRenderer.render();
 
-        pr.render();
+        pointRenderer.render();
+
+        if(KeyCallback.isG())
+            guiRenderer.render();
+
+        //mc.update();
+        mcr.render();
     }
 
     int ii = 0;

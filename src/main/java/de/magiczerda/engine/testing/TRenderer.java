@@ -4,11 +4,10 @@ import de.magiczerda.engine.core.io.KeyCallback;
 import de.magiczerda.engine.core.rendering.Camera;
 import de.magiczerda.engine.core.gameObjects.GameObject;
 import de.magiczerda.engine.core.rendering.Renderer;
+import de.magiczerda.engine.core.shader.RCShader;
 import de.magiczerda.engine.core.shader.Shader;
 import de.magiczerda.engine.core.shader.ShaderProgram;
 import de.magiczerda.engine.core.shader.ShaderType;
-
-import java.awt.event.KeyListener;
 
 public class TRenderer extends Renderer {
 

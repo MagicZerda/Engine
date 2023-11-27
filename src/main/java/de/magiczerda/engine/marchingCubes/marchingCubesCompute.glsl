@@ -1,533 +1,275 @@
 #version 450 core
 
-layout (local_size_x = 8, local_size_y = 16, local_size_z = 8) in;
+layout (local_size_x = 9, local_size_y = 9, local_size_z = 9) in; /* 9*9*9 cubes */
 
 //layout (rgba32f, binding = 3) uniform image2D outTexture;
-
 
 layout (std430, binding = 0) readonly buffer bufferInData {
     float fieldData[];
 } bufferIn;
 
 layout (std430, binding = 1) writeonly buffer bufferOutData {
-    float data[];
+    float outData[];
 } bufferOut;
 
 
-uniform int sizeX;
-uniform int sizeY;
-uniform int sizeZ;
+layout (std430, binding = 2) writeonly buffer bufferOutNormal {
+    float normData[];
+} normalOut;
 
-uniform int t;
-
-uniform float iso_value;
-
-
-/*
-const int edgeTable[256]={
-0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
-0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
-0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
-0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
-0x230, 0x339, 0x33 , 0x13a, 0x636, 0x73f, 0x435, 0x53c,
-0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
-0x3a0, 0x2a9, 0x1a3, 0xaa , 0x7a6, 0x6af, 0x5a5, 0x4ac,
-0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
-0x460, 0x569, 0x663, 0x76a, 0x66 , 0x16f, 0x265, 0x36c,
-0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
-0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff , 0x3f5, 0x2fc,
-0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
-0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55 , 0x15c,
-0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
-0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc ,
-0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
-0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
-0xcc , 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
-0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
-0x15c, 0x55 , 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
-0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
-0x2fc, 0x3f5, 0xff , 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
-0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
-0x36c, 0x265, 0x16f, 0x66 , 0x76a, 0x663, 0x569, 0x460,
-0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
-0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa , 0x1a3, 0x2a9, 0x3a0,
-0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
-0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33 , 0x339, 0x230,
-0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
-0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99 , 0x190,
-0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
-0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0   };
-
-const int triTable[256][16] =
-{{ - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 1, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 8, 3, 9, 8, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 3, 1, 2, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 2, 10, 0, 2, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 8, 3, 2, 10, 8, 10, 9, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 11, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 11, 2, 8, 11, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 9, 0, 2, 3, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 11, 2, 1, 9, 11, 9, 8, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 10, 1, 11, 10, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 10, 1, 0, 8, 10, 8, 11, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 9, 0, 3, 11, 9, 11, 10, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 8, 10, 10, 8, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 7, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 3, 0, 7, 3, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 1, 9, 8, 4, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 1, 9, 4, 7, 1, 7, 3, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 10, 8, 4, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 4, 7, 3, 0, 4, 1, 2, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 2, 10, 9, 0, 2, 8, 4, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, - 1, - 1, - 1, - 1},
-{8, 4, 7, 3, 11, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{11, 4, 7, 11, 2, 4, 2, 0, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 0, 1, 8, 4, 7, 2, 3, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, - 1, - 1, - 1, - 1},
-{3, 10, 1, 3, 11, 10, 7, 8, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, - 1, - 1, - 1, - 1},
-{4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, - 1, - 1, - 1, - 1},
-{4, 7, 11, 4, 11, 9, 9, 11, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 5, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 5, 4, 0, 8, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 5, 4, 1, 5, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 5, 4, 8, 3, 5, 3, 1, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 10, 9, 5, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 0, 8, 1, 2, 10, 4, 9, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 2, 10, 5, 4, 2, 4, 0, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, - 1, - 1, - 1, - 1},
-{9, 5, 4, 2, 3, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 11, 2, 0, 8, 11, 4, 9, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 5, 4, 0, 1, 5, 2, 3, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, - 1, - 1, - 1, - 1},
-{10, 3, 11, 10, 1, 3, 9, 5, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, - 1, - 1, - 1, - 1},
-{5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, - 1, - 1, - 1, - 1},
-{5, 4, 8, 5, 8, 10, 10, 8, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 7, 8, 5, 7, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 3, 0, 9, 5, 3, 5, 7, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 7, 8, 0, 1, 7, 1, 5, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 5, 3, 3, 5, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 7, 8, 9, 5, 7, 10, 1, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, - 1, - 1, - 1, - 1},
-{8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, - 1, - 1, - 1, - 1},
-{2, 10, 5, 2, 5, 3, 3, 5, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{7, 9, 5, 7, 8, 9, 3, 11, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, - 1, - 1, - 1, - 1},
-{2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, - 1, - 1, - 1, - 1},
-{11, 2, 1, 11, 1, 7, 7, 1, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, - 1, - 1, - 1, - 1},
-{5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, - 1},
-{11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, - 1},
-{11, 10, 5, 7, 11, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 6, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 3, 5, 10, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 0, 1, 5, 10, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 8, 3, 1, 9, 8, 5, 10, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 6, 5, 2, 6, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 6, 5, 1, 2, 6, 3, 0, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 6, 5, 9, 0, 6, 0, 2, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, - 1, - 1, - 1, - 1},
-{2, 3, 11, 10, 6, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{11, 0, 8, 11, 2, 0, 10, 6, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 1, 9, 2, 3, 11, 5, 10, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, - 1, - 1, - 1, - 1},
-{6, 3, 11, 6, 5, 3, 5, 1, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, - 1, - 1, - 1, - 1},
-{3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, - 1, - 1, - 1, - 1},
-{6, 5, 9, 6, 9, 11, 11, 9, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 10, 6, 4, 7, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 3, 0, 4, 7, 3, 6, 5, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 9, 0, 5, 10, 6, 8, 4, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, - 1, - 1, - 1, - 1},
-{6, 1, 2, 6, 5, 1, 4, 7, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, - 1, - 1, - 1, - 1},
-{8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, - 1, - 1, - 1, - 1},
-{7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, - 1},
-{3, 11, 2, 7, 8, 4, 10, 6, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, - 1, - 1, - 1, - 1},
-{0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, - 1, - 1, - 1, - 1},
-{9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, - 1},
-{8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, - 1, - 1, - 1, - 1},
-{5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, - 1},
-{0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, - 1},
-{6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, - 1, - 1, - 1, - 1},
-{10, 4, 9, 6, 4, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 10, 6, 4, 9, 10, 0, 8, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 0, 1, 10, 6, 0, 6, 4, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, - 1, - 1, - 1, - 1},
-{1, 4, 9, 1, 2, 4, 2, 6, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, - 1, - 1, - 1, - 1},
-{0, 2, 4, 4, 2, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 3, 2, 8, 2, 4, 4, 2, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 4, 9, 10, 6, 4, 11, 2, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, - 1, - 1, - 1, - 1},
-{3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, - 1, - 1, - 1, - 1},
-{6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, - 1},
-{9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, - 1, - 1, - 1, - 1},
-{8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, - 1},
-{3, 11, 6, 3, 6, 0, 0, 6, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{6, 4, 8, 11, 6, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{7, 10, 6, 7, 8, 10, 8, 9, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, - 1, - 1, - 1, - 1},
-{10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, - 1, - 1, - 1, - 1},
-{10, 6, 7, 10, 7, 1, 1, 7, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, - 1, - 1, - 1, - 1},
-{2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, - 1},
-{7, 8, 0, 7, 0, 6, 6, 0, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{7, 3, 2, 6, 7, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, - 1, - 1, - 1, - 1},
-{2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, - 1},
-{1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, - 1},
-{11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, - 1, - 1, - 1, - 1},
-{8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, - 1},
-{0, 9, 1, 11, 6, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, - 1, - 1, - 1, - 1},
-{7, 11, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{7, 6, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 0, 8, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 1, 9, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 1, 9, 8, 3, 1, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 1, 2, 6, 11, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 10, 3, 0, 8, 6, 11, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 9, 0, 2, 10, 9, 6, 11, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, - 1, - 1, - 1, - 1},
-{7, 2, 3, 6, 2, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{7, 0, 8, 7, 6, 0, 6, 2, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 7, 6, 2, 3, 7, 0, 1, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, - 1, - 1, - 1, - 1},
-{10, 7, 6, 10, 1, 7, 1, 3, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, - 1, - 1, - 1, - 1},
-{0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, - 1, - 1, - 1, - 1},
-{7, 6, 10, 7, 10, 8, 8, 10, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{6, 8, 4, 11, 8, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 6, 11, 3, 0, 6, 0, 4, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 6, 11, 8, 4, 6, 9, 0, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, - 1, - 1, - 1, - 1},
-{6, 8, 4, 6, 11, 8, 2, 10, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, - 1, - 1, - 1, - 1},
-{4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, - 1, - 1, - 1, - 1},
-{10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, - 1},
-{8, 2, 3, 8, 4, 2, 4, 6, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 4, 2, 4, 6, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, - 1, - 1, - 1, - 1},
-{1, 9, 4, 1, 4, 2, 2, 4, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 1, 3, 8, 6, 1, 8, 4, 6, 6, 10, 1, - 1, - 1, - 1, - 1},
-{10, 1, 0, 10, 0, 6, 6, 0, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, - 1},
-{10, 9, 4, 6, 10, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 9, 5, 7, 6, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 3, 4, 9, 5, 11, 7, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 0, 1, 5, 4, 0, 7, 6, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, - 1, - 1, - 1, - 1},
-{9, 5, 4, 10, 1, 2, 7, 6, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, - 1, - 1, - 1, - 1},
-{7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, - 1, - 1, - 1, - 1},
-{3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, - 1},
-{7, 2, 3, 7, 6, 2, 5, 4, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, - 1, - 1, - 1, - 1},
-{3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, - 1, - 1, - 1, - 1},
-{6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, - 1},
-{9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, - 1, - 1, - 1, - 1},
-{1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, - 1},
-{4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, - 1},
-{7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, - 1, - 1, - 1, - 1},
-{6, 9, 5, 6, 11, 9, 11, 8, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, - 1, - 1, - 1, - 1},
-{0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, - 1, - 1, - 1, - 1},
-{6, 11, 3, 6, 3, 5, 5, 3, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, - 1, - 1, - 1, - 1},
-{0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, - 1},
-{11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, - 1},
-{6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, - 1, - 1, - 1, - 1},
-{5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, - 1, - 1, - 1, - 1},
-{9, 5, 6, 9, 6, 0, 0, 6, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, - 1},
-{1, 5, 6, 2, 1, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, - 1},
-{10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, - 1, - 1, - 1, - 1},
-{0, 3, 8, 5, 6, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 5, 6, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{11, 5, 10, 7, 5, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{11, 5, 10, 11, 7, 5, 8, 3, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 11, 7, 5, 10, 11, 1, 9, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{10, 7, 5, 10, 11, 7, 9, 8, 1, 8, 3, 1, - 1, - 1, - 1, - 1},
-{11, 1, 2, 11, 7, 1, 7, 5, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, - 1, - 1, - 1, - 1},
-{9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, - 1, - 1, - 1, - 1},
-{7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, - 1},
-{2, 5, 10, 2, 3, 5, 3, 7, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, - 1, - 1, - 1, - 1},
-{9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, - 1, - 1, - 1, - 1},
-{9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, - 1},
-{1, 3, 5, 3, 7, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 7, 0, 7, 1, 1, 7, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 0, 3, 9, 3, 5, 5, 3, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 8, 7, 5, 9, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 8, 4, 5, 10, 8, 10, 11, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, - 1, - 1, - 1, - 1},
-{0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, - 1, - 1, - 1, - 1},
-{10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, - 1},
-{2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, - 1, - 1, - 1, - 1},
-{0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, - 1},
-{0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, - 1},
-{9, 4, 5, 2, 11, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, - 1, - 1, - 1, - 1},
-{5, 10, 2, 5, 2, 4, 4, 2, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, - 1},
-{5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, - 1, - 1, - 1, - 1},
-{8, 4, 5, 8, 5, 3, 3, 5, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 4, 5, 1, 0, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, - 1, - 1, - 1, - 1},
-{9, 4, 5, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 11, 7, 4, 9, 11, 9, 10, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, - 1, - 1, - 1, - 1},
-{1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, - 1, - 1, - 1, - 1},
-{3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, - 1},
-{4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, - 1, - 1, - 1, - 1},
-{9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, - 1},
-{11, 7, 4, 11, 4, 2, 2, 4, 0, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, - 1, - 1, - 1, - 1},
-{2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, - 1, - 1, - 1, - 1},
-{9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, - 1},
-{3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, - 1},
-{1, 10, 2, 8, 7, 4, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 9, 1, 4, 1, 7, 7, 1, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, - 1, - 1, - 1, - 1},
-{4, 0, 3, 7, 4, 3, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{4, 8, 7, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 10, 8, 10, 11, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 0, 9, 3, 9, 11, 11, 9, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 1, 10, 0, 10, 8, 8, 10, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 1, 10, 11, 3, 10, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 2, 11, 1, 11, 9, 9, 11, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, - 1, - 1, - 1, - 1},
-{0, 2, 11, 8, 0, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{3, 2, 11, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 3, 8, 2, 8, 10, 10, 8, 9, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{9, 10, 2, 0, 9, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, - 1, - 1, - 1, - 1},
-{1, 10, 2, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{1, 3, 8, 9, 1, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 9, 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{0, 3, 8, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1},
-{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
-*/
+layout (std430, binding = 3) writeonly buffer bufferOutDebug {
+    float data[];
+} testOut;
 
 
-/*
-
-float getValAt(int xx, int yy, int zz) {
-    return bufferIn.fieldData[(sizeX * sizeZ) * yy + sizeZ * zz + xx];
-}
-
-vec3 interp(vec4 vertex1, vec4 vertex2) {
-    return vertex1.xyz;
-}*/
-
-uint indexOf(uint xx, uint yy, uint zz) {
-    return yy * (sizeX - 1) * (sizeZ - 1) +
-            zz * (sizeX - 1) + xx;
-}
-
-float getValAt(ivec3 pos) {
-    uint index = sizeX * sizeZ * pos.y + sizeX * pos.z + pos.x;
-    return bufferIn.fieldData[index];
-}
-
-vec4 getVertex(uint cubeXX, uint cubeYY, uint cubeZZ, int vertIndex) {
-    vec4 vertex = vec4(cubeXX, cubeYY, cubeZZ, 0);
-
-    vec3 dv = vec3(0, 0, 0);
-    if(vertIndex == 1 || vertIndex == 5)   dv.x = 1;
-    if(vertIndex == 2 || vertIndex == 6) { dv.x = 1; dv.z = 1; }
-    if(vertIndex == 3 || vertIndex == 7)   dv.z = 1;
-
-    if(vertIndex > 3) dv.y = 1;
-
-    //vertex.w = getValAt(ivec3(vertex.xyz));
+uniform vec3 segSize;
 
 
-    vertex += vec4(dv, 0);
-    vertex.w = getValAt(ivec3(vertex.x, vertex.y, vertex.z));
+uniform vec3 worldRay;
 
-    return vertex;
-    //return vec4(cubeXX, cubeYY, cubeZZ, 5);
-}
+uniform float isolevel;
+
+const float ds = 0.00000001;
+const float dp = 1;
+
 
 vec3 interpolate(vec4 v1, vec4 v2) {
-    float val = 0.5;
+    if(abs(v1.w - isolevel) < ds) return v1.xyz;
+    if(abs(v2.w - isolevel) < ds) return v2.xyz;
+    if(abs(v2.w - v1.w) < ds) return v1.xyz;
 
-    vec3 point = v1.xyz;
-
-    point += (v2.xyz - v1.xyz) * val;
-
-    return point;
+    float factor = (isolevel - v1.w) / (v2.w - v1.w);
+    //float factor = 0.5;
+    return v1.xyz + factor * (v2.xyz - v1.xyz);
 }
 
-void main(void) {
-    uint xCoord = gl_LocalInvocationID.x;// % (sizeX - 1);
-    uint zCoord = gl_LocalInvocationID.z;// % (sizeZ - 1);
-    uint yCoord = gl_LocalInvocationID.y;
 
-    vec4 vert[8] = {
-            getVertex(xCoord, yCoord, zCoord,   0),
-            getVertex(xCoord, yCoord, zCoord,   1),
-            getVertex(xCoord, yCoord, zCoord,   2),
-            getVertex(xCoord, yCoord, zCoord,   3),
-            getVertex(xCoord, yCoord, zCoord,   4),
-            getVertex(xCoord, yCoord, zCoord,   5),
-            getVertex(xCoord, yCoord, zCoord,   6),
-            getVertex(xCoord, yCoord, zCoord,   7)
+vec3[6] polygonize(vec4[8] cubeGrid, int v0, int v1, int v2, int v3) {
+    int tri = 0;
+    uint triindex = 0;
+
+    if(cubeGrid[v0].w < isolevel) triindex |= 1;
+    if(cubeGrid[v1].w < isolevel) triindex |= 2;
+    if(cubeGrid[v2].w < isolevel) triindex |= 4;
+    if(cubeGrid[v3].w < isolevel) triindex |= 8;
+
+
+    vec3[] triangles = {
+        vec3(0,0,0),   vec3(0,0,0),   vec3(0,0,0),
+        vec3(0,0,0),   vec3(0,0,0),   vec3(0,0,0)
     };
 
+    //if(triindex != 0x08) return triangles;
 
-    /*int cubeindex = 0;
-
-    //for(int ii = 0; ii < 8; ii++) {
-    //    if(vert[ii].w < iso_value) cubeindex |= (1 << ii);
-    //}
-
-    if (vert[0].w < iso_value) cubeindex |= 1;
-    if (vert[1].w < iso_value) cubeindex |= 2;
-    if (vert[2].w < iso_value) cubeindex |= 4;
-    if (vert[3].w < iso_value) cubeindex |= 8;
-    if (vert[4].w < iso_value) cubeindex |= 16;
-    if (vert[5].w < iso_value) cubeindex |= 32;
-    if (vert[6].w < iso_value) cubeindex |= 64;
-    if (vert[7].w < iso_value) cubeindex |= 128;
-
-    //if(edgeTable[cubeindex] == 0) return;
-
-    vec3 interpolatedVertices[12] = { vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                                      vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                                      vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                                      vec3(0,0,0), vec3(0,0,0), vec3(0,0,0) };
-
-    if((edgeTable[cubeindex] & 1) != 0)
-        interpolatedVertices[0] = interpolate(vert[0], vert[1]);
-    if((edgeTable[cubeindex] & 2) != 0)
-        interpolatedVertices[1] = interpolate(vert[1], vert[2]);
-    if((edgeTable[cubeindex] & 4) != 0)
-        interpolatedVertices[2] = interpolate(vert[2], vert[3]);
-    if((edgeTable[cubeindex] & 8) != 0)
-        interpolatedVertices[3] = interpolate(vert[3], vert[0]);
-    if((edgeTable[cubeindex] & 16) != 0)
-        interpolatedVertices[4] = interpolate(vert[4], vert[5]);
-    if((edgeTable[cubeindex] & 32) != 0)
-        interpolatedVertices[5] = interpolate(vert[5], vert[6]);
-    if((edgeTable[cubeindex] & 64) != 0)
-        interpolatedVertices[6] = interpolate(vert[6], vert[7]);
-    if((edgeTable[cubeindex] & 128) != 0)
-        interpolatedVertices[7] = interpolate(vert[7], vert[4]);
-    if((edgeTable[cubeindex] & 256) != 0)
-        interpolatedVertices[8] = interpolate(vert[0], vert[4]);
-    if((edgeTable[cubeindex] & 512) != 0)
-        interpolatedVertices[9] = interpolate(vert[1], vert[5]);
-    if((edgeTable[cubeindex] & 1024) != 0)
-        interpolatedVertices[10] = interpolate(vert[2], vert[6]);
-    if((edgeTable[cubeindex] & 2048) != 0)
-        interpolatedVertices[11] = interpolate(vert[3], vert[7]);
-
-
-
-    int nTri = 0;
-
-    vec3[] cubeTriangles = { vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                             vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                             vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                             vec3(0,0,0), vec3(0,0,0), vec3(0,0,0),
-                             vec3(0,0,0), vec3(0,0,0), vec3(0,0,0) };
-
-    for(int ii = 0; triTable[cubeindex][ii] != -1; ii+= 3) {
-        cubeTriangles[3 * nTri    ] = interpolatedVertices[triTable[cubeindex][ii   ]];
-        cubeTriangles[3 * nTri + 1] = interpolatedVertices[triTable[cubeindex][ii + 1]];
-        cubeTriangles[3 * nTri + 2] = interpolatedVertices[triTable[cubeindex][ii + 2]];
-        nTri++;
+    switch(triindex) {
+        case 0x00:
+        case 0x0F:
+            break;
+        case 0x0E:
+        case 0x01:
+            triangles[0] = interpolate(cubeGrid[v0], cubeGrid[v1]);
+            triangles[1] = interpolate(cubeGrid[v0], cubeGrid[v2]);
+            triangles[2] = interpolate(cubeGrid[v0], cubeGrid[v3]);
+            tri++;
+            break;
+        case 0x0D:
+        case 0x02:
+            triangles[0] = interpolate(cubeGrid[v1], cubeGrid[v0]);
+            triangles[1] = interpolate(cubeGrid[v1], cubeGrid[v3]);
+            triangles[2] = interpolate(cubeGrid[v1], cubeGrid[v2]);
+            tri++;
+            break;
+        case 0x0C:
+        case 0x03:
+            triangles[0] = interpolate(cubeGrid[v0], cubeGrid[v3]);
+            triangles[1] = interpolate(cubeGrid[v0], cubeGrid[v2]);
+            triangles[2] = interpolate(cubeGrid[v1], cubeGrid[v3]);
+            tri++;
+            triangles[3] = triangles[2];
+            triangles[4] = interpolate(cubeGrid[v1], cubeGrid[v2]);
+            triangles[5] = triangles[1];
+            tri++;
+            break;
+        case 0x0B:
+        case 0x04:
+            triangles[0] = interpolate(cubeGrid[v2], cubeGrid[v0]);
+            triangles[1] = interpolate(cubeGrid[v2], cubeGrid[v1]);
+            triangles[2] = interpolate(cubeGrid[v2], cubeGrid[v3]);
+            tri++;
+            break;
+        case 0x0A:
+        case 0x05:
+            triangles[0] = interpolate(cubeGrid[v0], cubeGrid[v1]);
+            triangles[1] = interpolate(cubeGrid[v2], cubeGrid[v3]);
+            triangles[2] = interpolate(cubeGrid[v0], cubeGrid[v3]);
+            tri++;
+            triangles[3] = triangles[0];
+            triangles[4] = interpolate(cubeGrid[v1], cubeGrid[v2]);
+            triangles[5] = triangles[1];
+            tri++;
+            break;
+        case 0x09:
+        case 0x06:
+            triangles[0] = interpolate(cubeGrid[v0], cubeGrid[v1]);
+            triangles[1] = interpolate(cubeGrid[v1], cubeGrid[v3]);
+            triangles[2] = interpolate(cubeGrid[v2], cubeGrid[v3]);
+            tri++;
+            triangles[3] = triangles[0];
+            triangles[4] = interpolate(cubeGrid[v0], cubeGrid[v2]);
+            triangles[5] = triangles[2];
+            tri++;
+            break;
+        case 0x07:
+        case 0x08:
+            triangles[0] = interpolate(cubeGrid[v3], cubeGrid[v0]);
+            triangles[1] = interpolate(cubeGrid[v3], cubeGrid[v2]);
+            triangles[2] = interpolate(cubeGrid[v3], cubeGrid[v1]);
+            tri++;
+            break;
     }
-*/
-    uint index = indexOf(xCoord, yCoord, zCoord);
-
-    bufferOut.data[4 * index    ] = vert[0].x;
-    bufferOut.data[4 * index + 1] = vert[0].y;
-    bufferOut.data[4 * index + 2] = vert[0].z;
-    bufferOut.data[4 * index + 3] = vert[0].w;
-
-    /*bufferOut.data[3 * index    ] = vert[0].x;
-    bufferOut.data[3 * index + 1] = vert[0].y;
-    bufferOut.data[3 * index + 2] = vert[0].z;*/
 
 
-    /*uint index = indexOf(gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
-    bufferOut.data[4 * index    ] = vert[0].x;
-    bufferOut.data[4 * index + 1] = vert[0].y;
-    bufferOut.data[4 * index + 2] = vert[0].z;
-    bufferOut.data[4 * index + 3] = vert[0].w;*/
+    return triangles;
+}
 
 
-    /*bufferOut.data[3*index] = index;
-    bufferOut.data[3*index+1] = index;
-    bufferOut.data[3*index+2] = index;*/
-    //bufferOut.data[0] = indexOf(2, 2, 2);
+void sendVertex(vec3 vertex, int id) {
+    bufferOut.outData[3*id]   = vertex.x;
+    bufferOut.outData[3*id+1] = vertex.y;
+    bufferOut.outData[3*id+2] = vertex.z;
+}
 
-    //bufferOut.data[3 * index] = gl_LocalInvocationID.x;
-    //bufferOut.data[3 * index + 1] = yCoord;
-    //bufferOut.data[3 * index + 2] = gl_LocalInvocationID.z;
+void sendNormal(vec3 normal, int id) {
+    normalOut.normData[3*id]   = normal.x;
+    normalOut.normData[3*id+1] = normal.y;
+    normalOut.normData[3*id+2] = normal.z;
+}
 
-    //bufferOut.data[3*index] = yCoord;
-    //bufferOut.data[3*index + 1] = yCoord;
-    //bufferOut.data[3*index + 2] = yCoord;
-
-    //bufferOut.data[1] = index;
-    //bufferOut.data[2] = gl_GlobalInvocationID.x;
-
-    //bufferOut.data[3] = xCoord;
-    //bufferOut.data[4] = yCoord;
-    //bufferOut.data[5] = zCoord;
-
-    //uint id = sizeX * sizeZ + 1;
-    //bufferOut.data[3 * id    ] = 3;
-    //bufferOut.data[3 * id + 1] = 1;
-    //bufferOut.data[3 * id + 2] = 0;
+void calcNormal(vec3[6] tt, int subj, int n1, int n2, int nID) {
+    vec3 toN1 = tt[n1] - tt[subj];
+    vec3 toN2 = tt[n2] - tt[subj];
+    vec3 normal = normalize(cross(toN1, toN2));
+    sendNormal(normal, nID);
+}
 
 
-    //bufferOut.data[0] = vec3(0, 0, 0);
+void sendTT(vec3[6] tt, int id, int offset) {
+    int mul = 36;
+
+    for(int ii = 5; ii >= 0; ii--)  {
+        sendVertex(dp * tt[ii], mul*id + offset + ii);
+    }
+
+    calcNormal(tt, 0,   1, 2, mul*id + offset);
+    calcNormal(tt, 1,   2, 0, mul*id + offset + 1);
+    calcNormal(tt, 2,   0, 1, mul*id + offset + 2);
+
+    calcNormal(tt, 3,   4, 5, mul*id + offset + 3);
+    calcNormal(tt, 4,   5, 3, mul*id + offset + 4);
+    calcNormal(tt, 5,   3, 4, mul*id + offset + 5);
+
+}
 
 
+/** Unfortunately, some of the triangles are specified clockwise by
+    marching tetrahedra in a really unpredictable way.
+    So this is my shabby attempt at finding those triangles
+    and flipping the winding order around.                         */
 
-    /*int v_index = 0;
-    bufferOut.data[4 * v_index + 0] = v0.x;
-    bufferOut.data[4 * v_index + 1] = v0.y;
-    bufferOut.data[4 * v_index + 2] = v0.z;
-    bufferOut.data[4 * v_index + 3] = 0.5;
+vec3[6] sortVertices(vec3[6] tt) {
+    vec3[] ret = {
+            tt[0],   tt[1],   tt[2],
+            tt[3],   tt[4],   tt[5]
+    };
 
-    v_index++;
-    bufferOut.data[4 * v_index + 0] = v1.x;
-    bufferOut.data[4 * v_index + 1] = v1.y;
-    bufferOut.data[4 * v_index + 2] = v1.z;
-    bufferOut.data[4 * v_index + 3] = 1;*/
+    for(int ii = 0; ii < 2; ii++) {
+        vec3 center = vec3(             //find the average of the three triangle vertices
+            (tt[3*ii + 0].x + tt[3*ii + 1].x + tt[3*ii + 2].x) / 3,
+            (tt[3*ii + 0].y + tt[3*ii + 1].y + tt[3*ii + 2].y) / 3,
+            (tt[3*ii + 0].z + tt[3*ii + 1].z + tt[3*ii + 2].z) / 3
+        );
 
-    /*for(int ii = 0; triTable[cubeindex][ii] != -1; ii += 3) {
-        bufferOut.data[3 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + xx)    ] = vertices[triTable[cubeindex][ii    ]].x;
-        bufferOut.data[3 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + xx) + 1] = vertices[triTable[cubeindex][ii    ]].y;
-        bufferOut.data[3 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + xx) + 2] = vertices[triTable[cubeindex][ii    ]].z;
+        //Now, get the vector from the center of the triangle
+        //To vertex #0 and #1 of the triangle
+        vec3 toV0 = normalize(tt[3*ii] - center);
+        vec3 toV1 = normalize(tt[3*ii+1] - center);
 
-        //bufferOut.data[3 * ((sizeX - 1) * (sizeZ - 1) * yy + (sizeX - 1) * zz + xx)    ] = xx;
-        //bufferOut.data[3 * ((sizeX - 1) * (sizeZ - 1) * yy + (sizeX - 1) * zz + xx) + 1] = yy;
-        //bufferOut.data[3 * ((sizeX - 1) * (sizeZ - 1) * yy + (sizeX - 1) * zz + xx) + 2] = zz;*/
+        //Calculate the cross product of the two normalized vectors
+        //pointig to vertices #0 and #1 of the triangle, to get
+        //the current triangle's normal vector (which might be negative)
+        vec3 crss = normalize(cross(toV0, toV1));
 
-        /*bufferOut.data[12 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + sizeX) + 3] = vertices[triTable[cubeindex][ii + 1]].x;
-        bufferOut.data[12 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + sizeX) + 4] = vertices[triTable[cubeindex][ii + 1]].y;
-        bufferOut.data[12 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + sizeX) + 5] = vertices[triTable[cubeindex][ii + 1]].z;
+        //Now, take the cross product between the triangle's normal vector
+        //and the vector that points toward the player/ center of the screen
+        float scl = dot(crss, -worldRay);
 
-        bufferOut.data[12 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + sizeX) + 6] = vertices[triTable[cubeindex][ii + 2]].x;
-        bufferOut.data[12 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + sizeX) + 7] = vertices[triTable[cubeindex][ii + 2]].y;
-        bufferOut.data[12 * (((sizeX * sizeZ) * yy) + (sizeX) * zz + sizeX) + 8] = vertices[triTable[cubeindex][ii + 2]].z;*/
-    //}
 
-    //imageStore(outTexture, coord, col);
+        //If the normal of the triangle points in a different direction
+        //than the screen, we need to flip the order of the triangle
+
+        if(scl < 0) {
+            vec3 save = tt[3*ii + 2];
+            ret[3*ii + 2] = tt[3*ii];
+            ret[3*ii] = save;
+        }
+    }
+
+    return ret;
+
+}
+
+
+void main() {
+    uint lcx = gl_LocalInvocationID.x;
+    uint lcy = gl_LocalInvocationID.y;
+    uint lcz = gl_LocalInvocationID.z;
+
+    uint gcx = 10 * gl_WorkGroupID.x;
+    uint gcy = 10 * gl_WorkGroupID.y;
+    uint gcz = 10 * gl_WorkGroupID.z;
+
+    uint wgx = gl_WorkGroupID.x;
+    uint wgy = gl_WorkGroupID.y;
+    uint wgz = gl_WorkGroupID.z;
+
+    uint ffID = lcy * 100 + lcz * 10 + lcx + 1000*wgx +
+        1000 * uint(segSize.x * segSize.z) * wgy +
+        1000 * uint(segSize.x) * wgz;
+
+
+    //Read all 8 vertices of a cube into our cubeGrid.
+    //the fourth direction specifies the value of our
+    //field at that vertex.
+
+    vec4[] cubeGrid = {
+            vec4(gcx + lcx,     gcy + lcy,     gcz + lcz,     bufferIn.fieldData[ffID]),         //0
+            vec4(gcx + lcx + 1, gcy + lcy,     gcz + lcz,     bufferIn.fieldData[ffID + 1]),     //1
+            vec4(gcx + lcx + 1, gcy + lcy,     gcz + lcz + 1, bufferIn.fieldData[ffID + 11]),    //2
+            vec4(gcx + lcx,     gcy + lcy,     gcz + lcz + 1, bufferIn.fieldData[ffID + 10]),    //3
+            vec4(gcx + lcx,     gcy + lcy + 1, gcz + lcz,     bufferIn.fieldData[ffID + 100]),   //4
+            vec4(gcx + lcx + 1, gcy + lcy + 1, gcz + lcz,     bufferIn.fieldData[ffID + 101]),   //5
+            vec4(gcx + lcx + 1, gcy + lcy + 1, gcz + lcz + 1, bufferIn.fieldData[ffID + 111]),   //6
+            vec4(gcx + lcx,     gcy + lcy + 1, gcz + lcz + 1, bufferIn.fieldData[ffID + 110])    //7
+    };
+
+    int id = int(gl_LocalInvocationID.y * 81 + gl_LocalInvocationID.z * 9 + gl_LocalInvocationID.x);
+
+    id += int(gl_WorkGroupID.x) * 729;
+    id += int(gl_WorkGroupID.y) * int(segSize.x * segSize.z) * 729;
+    id += int(gl_WorkGroupID.z) * int(segSize.x) * 729;
+
+    vec3[] tt0 = polygonize(cubeGrid, 0, 2, 3, 7);
+    vec3[] tt1 = polygonize(cubeGrid, 0, 2, 6, 7);
+    vec3[] tt2 = polygonize(cubeGrid, 0, 4, 6, 7);
+    vec3[] tt3 = polygonize(cubeGrid, 0, 6, 1, 2);
+    vec3[] tt4 = polygonize(cubeGrid, 0, 6, 1, 4);
+    vec3[] tt5 = polygonize(cubeGrid, 5, 6, 1, 4);
+
+    sendTT(sortVertices(tt0), id, 0);
+    sendTT(sortVertices(tt1), id, 6);
+    sendTT(sortVertices(tt2), id, 12);
+    sendTT(sortVertices(tt3), id, 18);
+    sendTT(sortVertices(tt4), id, 24);
+    sendTT(sortVertices(tt5), id, 30);
 
 }
